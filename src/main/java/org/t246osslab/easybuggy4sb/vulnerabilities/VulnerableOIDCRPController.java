@@ -52,6 +52,18 @@ public class VulnerableOIDCRPController extends AbstractController {
 	
 	private static boolean isSettingsReady = false;
 
+	private static final int HTTP_CONNECT_TIMEOUT_MS = 5000;
+	private static final int HTTP_READ_TIMEOUT_MS = 10000;
+
+	private static void configureHttpTimeouts(HttpRequest request) {
+		request.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MS);
+		request.setReadTimeout(HTTP_READ_TIMEOUT_MS);
+	}
+
+	private static HttpRequestInitializer httpTimeoutInitializer() {
+		return request -> configureHttpTimeouts(request);
+	}
+
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
@@ -91,6 +103,7 @@ public class VulnerableOIDCRPController extends AbstractController {
 			try {
 				HttpRequestFactory requestFactory = (new NetHttpTransport()).createRequestFactory();
 				HttpRequest request = requestFactory.buildGetRequest(new GenericUrl(configEndpoint));
+				configureHttpTimeouts(request);
 				HttpResponse response = request.execute();
 				Map<?, ?> opConfig = new Gson().fromJson(response.parseAsString(), Map.class);
 				log.debug("OP Config: " + opConfig.toString());
@@ -369,6 +382,7 @@ public class VulnerableOIDCRPController extends AbstractController {
 			HttpHeaders headers = new HttpHeaders();
 			headers.setAuthorization("bearer " + accessToken);
 			request.setHeaders(headers);
+			configureHttpTimeouts(request);
 			HttpResponse response = request.execute();
             return new Gson().fromJson(response.parseAsString(), Map.class);
 		} catch (HttpResponseException e) {
@@ -398,6 +412,7 @@ public class VulnerableOIDCRPController extends AbstractController {
 			tokenReq.put("client_id", "admin-cli");
 			tokenReq.put("username", "admin");
 			tokenReq.put("password", "password");
+			tokenReq.setRequestInitializer(httpTimeoutInitializer());
 			TokenResponse tokenResponse = tokenReq.execute();
 			HttpHeaders headers = new HttpHeaders();
 			headers.setAuthorization("bearer " + tokenResponse.getAccessToken());
@@ -414,6 +429,7 @@ public class VulnerableOIDCRPController extends AbstractController {
 				readEndpoint = readEndpoint.replace("/clients-registrations/openid-connect", "/clients/" + clientId);
 				HttpRequest searchRequest = requestFactory.buildGetRequest(new GenericUrl(readEndpoint));
 				searchRequest.setHeaders(headers);
+				configureHttpTimeouts(searchRequest);
 				try {
 					HttpResponse searchResponse = searchRequest.execute();
 					clientInfo = new Gson().fromJson(searchResponse.parseAsString(), Map.class);
@@ -434,6 +450,7 @@ public class VulnerableOIDCRPController extends AbstractController {
 				HttpContent content = new JsonHttpContent(new JacksonFactory(), params);
 				HttpRequest registerRequest = requestFactory.buildPostRequest(new GenericUrl(registrationEndpoint), content);
 				registerRequest.setHeaders(headers);
+				configureHttpTimeouts(registerRequest);
 				HttpResponse response = registerRequest.execute();
 				clientInfo = new Gson().fromJson(response.parseAsString(), Map.class);
 				clientId = (String) clientInfo.get("client_id");
@@ -455,6 +472,7 @@ public class VulnerableOIDCRPController extends AbstractController {
 					new GenericUrl(tokenEndpoint), refreshToken);
 			tokenReq.setClientAuthentication(new BasicAuthentication(clientId, clientSecret));
 			try {
+				tokenReq.setRequestInitializer(httpTimeoutInitializer());
 				HttpResponse httpRes = tokenReq.executeUnparsed();
 				return httpRes.parseAs(TokenResponse.class);
 			} catch (IOException ioe) {
@@ -478,6 +496,7 @@ public class VulnerableOIDCRPController extends AbstractController {
 		try {
 			HttpRequestFactory requestFactory = (new NetHttpTransport()).createRequestFactory();
 			HttpRequest request = requestFactory.buildGetRequest(new GenericUrl(jwksUri));
+			configureHttpTimeouts(request);
 			HttpResponse response = request.execute();
 			Map<?, ?> fromJson = new Gson().fromJson(response.parseAsString(), Map.class);
 			List<Map<?, ?>> keys = (List<Map<?, ?>>) fromJson.get("keys");
