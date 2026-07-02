@@ -11,10 +11,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.tomcat.util.http.fileupload.FileUploadException;
-import org.apache.tomcat.util.http.fileupload.disk.DiskFileItemFactory;
-import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
-import org.apache.tomcat.util.http.fileupload.servlet.ServletRequestContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
@@ -32,11 +28,6 @@ public class SecurityFilter implements Filter {
      * The maximum size permitted for the complete request.
      */
     private static final int REQUEST_SIZE_MAX = 1024 * 1024 * 50;
-
-    /**
-     * The maximum size permitted for a single uploaded file.
-     */
-    private static final int FILE_SIZE_MAX = 1024 * 1024 * 10;
 
     /**
      * Prevent several security vulnerabilities.
@@ -60,16 +51,11 @@ public class SecurityFilter implements Filter {
         /* Prevent XSS */
         response.addHeader("X-XSS-Protection", "1; mode=block");
 
-        /* Prevent uploading large files if target starts with /ureupload, /xee, or /xxe */
+        /* Reject oversized uploads early without parsing the multipart body (preserves stream for Spring). */
         if ((target.startsWith("/ureupload") || target.startsWith("/xee") || target.startsWith("/xxe"))
                 && request.getMethod().equalsIgnoreCase("POST")) {
-            ServletFileUpload upload = new ServletFileUpload();
-            upload.setFileItemFactory(new DiskFileItemFactory());
-            upload.setFileSizeMax(FILE_SIZE_MAX); // 10MB
-            upload.setSizeMax(REQUEST_SIZE_MAX); // 50MB
-            try {
-                upload.parseRequest(new ServletRequestContext(request));
-            } catch (FileUploadException e) {
+            long contentLength = request.getContentLengthLong();
+            if (contentLength > REQUEST_SIZE_MAX) {
                 req.setAttribute("errorMessage", msg.getMessage("msg.max.file.size.exceed", null, request.getLocale()));
             }
         }
