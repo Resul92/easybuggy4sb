@@ -19,6 +19,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class EncodingFilter extends OrderedCharacterEncodingFilter {
 
+    public EncodingFilter() {
+        setOrder(HIGHEST_PRECEDENCE);
+        setForceEncoding(true);
+    }
+
     /**
      * Set the encoding to use for requests.
      * "Shift_JIS" is intentionally set to the request to /mojibake.
@@ -28,13 +33,11 @@ public class EncodingFilter extends OrderedCharacterEncodingFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        super.setOrder(HIGHEST_PRECEDENCE);
         if ("/mojibake".equals(request.getRequestURI())) {
-            super.setEncoding("Shift_JIS");
+            setEncoding("Shift_JIS");
         } else {
-            super.setEncoding("UTF-8");
+            setEncoding("UTF-8");
         }
-        super.setForceEncoding(true);
         super.doFilterInternal(request, response, filterChain);
     }
 }

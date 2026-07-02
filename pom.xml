@@ -92,6 +92,7 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
+			<optional>true</optional>
 		</dependency>
 
 		<dependency>
@@ -208,7 +209,6 @@
 						-agentlib:jdwp=transport=dt_socket,server=y,address=9009,suspend=n
 						-Dderby.stream.error.file=logs/derby.log
 						-Dderby.infolog.append=true
-						-Dderby.language.logStatementText=true
 						-Dderby.locks.deadlockTrace=true
 						-Dderby.locks.monitor=true
 						-Dderby.storage.rowLocking=true
