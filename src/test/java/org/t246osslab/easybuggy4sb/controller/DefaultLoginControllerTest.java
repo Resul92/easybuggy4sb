@@ -38,6 +38,17 @@ public class DefaultLoginControllerTest {
                 history.containsKey("stale-user"));
     }
 
+    @Test
+    public void successfulLoginRemovesFailureHistoryEntry() throws Exception {
+        DefaultLoginController controller = new DefaultLoginController();
+
+        controller.incrementLoginFailedCount("recovered-user");
+        controller.resetAccountLock("recovered-user");
+
+        assertFalse("Successful login reset should remove the in-memory failure record",
+                loginHistory().containsKey("recovered-user"));
+    }
+
     @SuppressWarnings("unchecked")
     private static ConcurrentHashMap<String, User> loginHistory() throws Exception {
         Field field = DefaultLoginController.class.getDeclaredField("userLoginHistory");
