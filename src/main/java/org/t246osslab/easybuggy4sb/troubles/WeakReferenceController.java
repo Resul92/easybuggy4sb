@@ -44,6 +44,10 @@ public class WeakReferenceController extends AbstractController {
     	
 		Logger logger = Logger.getLogger(this.getClass().getCanonicalName());
 		logger.setLevel(Level.parse(logLevel));
+		for (Handler existingHandler : logger.getHandlers()) {
+			logger.removeHandler(existingHandler);
+			existingHandler.close();
+		}
 		Handler handler = new ConsoleHandler();
         logger.addHandler(handler);
         Formatter formatter =  new SimpleFormatter();

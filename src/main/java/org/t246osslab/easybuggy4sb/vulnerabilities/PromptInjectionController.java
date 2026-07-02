@@ -2,6 +2,7 @@ package org.t246osslab.easybuggy4sb.vulnerabilities;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,15 +18,34 @@ import java.util.*;
 @Controller
 public class PromptInjectionController extends AbstractController {
 
+    private static final int OLLAMA_CONNECT_TIMEOUT_MS = 5000;
+    private static final int OLLAMA_READ_TIMEOUT_MS = 60000;
+
+    private final RestTemplate restTemplate;
+
     @Value("${ollama.url}")
     protected String ollamaUrl;
 
     @Value("${ollama.model}")
     protected String ollamaModel;
 
+    public PromptInjectionController() {
+        this(createRestTemplate());
+    }
+
+    PromptInjectionController(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    private static RestTemplate createRestTemplate() {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(OLLAMA_CONNECT_TIMEOUT_MS);
+        requestFactory.setReadTimeout(OLLAMA_READ_TIMEOUT_MS);
+        return new RestTemplate(requestFactory);
+    }
+
     @GetMapping("/promptinjection")
     public ModelAndView index(ModelAndView mav, Locale locale) {
-        RestTemplate restTemplate = new RestTemplate();
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(ollamaUrl, String.class);
             if (HttpStatus.SC_OK == response.getStatusCode().value() && "Ollama is running".equals(response.getBody())){
@@ -50,7 +70,6 @@ public class PromptInjectionController extends AbstractController {
         String inputText = body.get("text");
         String targetLanguage = body.get("targetLanguage");
         Map<String, String> result = new HashMap<>();
-        RestTemplate restTemplate = new RestTemplate();
         Map<String, Object> reqBody = new HashMap<>();
         reqBody.put("model", ollamaModel);
         String prompt = "Translate the following text into " + targetLanguage + ": " + inputText;

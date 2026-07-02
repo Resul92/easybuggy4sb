@@ -62,12 +62,13 @@ public class ThreadStarvationController extends AbstractController {
 			}
 
 			mav.addObject("history", aggregationMap.values());
-			lock.unlock();
 
 		} catch (Exception e) {
 			log.error("Exception occurs: ", e);
 			mav.addObject("errmsg", msg.getMessage("msg.unknown.exception.occur", null, locale));
 
+		} finally {
+			lock.unlock();
 		}
 
 		return mav;

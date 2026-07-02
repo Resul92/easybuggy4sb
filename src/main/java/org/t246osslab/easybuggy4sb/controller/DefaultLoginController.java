@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.http.HttpServletRequest;
@@ -95,15 +96,14 @@ public class DefaultLoginController extends AbstractController {
     }
 
     protected void incrementLoginFailedCount(String userid) {
+        removeExpiredLoginHistory();
         User admin = getUser(userid);
         admin.setLoginFailedCount(admin.getLoginFailedCount() + 1);
         admin.setLastLoginFailedTime(new Date());
     }
 
     protected void resetAccountLock(String userid) {
-        User admin = getUser(userid);
-        admin.setLoginFailedCount(0);
-        admin.setLastLoginFailedTime(null);
+        userLoginHistory.remove(userid);
     }
 
     private User getUser(String userid) {
@@ -124,9 +124,21 @@ public class DefaultLoginController extends AbstractController {
         if (userid == null) {
             return false;
         }
+        removeExpiredLoginHistory();
         User admin = userLoginHistory.get(userid);
         return admin != null && admin.getLoginFailedCount() >= accountLockCount
                 && (new Date().getTime() - admin.getLastLoginFailedTime().getTime() < accountLockTime);
+    }
+
+    private void removeExpiredLoginHistory() {
+        long now = new Date().getTime();
+        for (Map.Entry<String, User> entry : userLoginHistory.entrySet()) {
+            User user = entry.getValue();
+            Date lastLoginFailedTime = user.getLastLoginFailedTime();
+            if (lastLoginFailedTime != null && now - lastLoginFailedTime.getTime() >= accountLockTime) {
+                userLoginHistory.remove(entry.getKey(), user);
+            }
+        }
     }
 
     protected boolean authUser(String userId, String password) {

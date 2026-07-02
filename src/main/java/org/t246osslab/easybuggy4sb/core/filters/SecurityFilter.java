@@ -63,6 +63,11 @@ public class SecurityFilter implements Filter {
         /* Prevent uploading large files if target starts with /ureupload, /xee, or /xxe */
         if ((target.startsWith("/ureupload") || target.startsWith("/xee") || target.startsWith("/xxe"))
                 && request.getMethod().equalsIgnoreCase("POST")) {
+            if (request.getContentLengthLong() > REQUEST_SIZE_MAX) {
+                req.setAttribute("errorMessage", msg.getMessage("msg.max.file.size.exceed", null, request.getLocale()));
+                response.sendError(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE);
+                return;
+            }
             ServletFileUpload upload = new ServletFileUpload();
             upload.setFileItemFactory(new DiskFileItemFactory());
             upload.setFileSizeMax(FILE_SIZE_MAX); // 10MB
@@ -71,6 +76,8 @@ public class SecurityFilter implements Filter {
                 upload.parseRequest(new ServletRequestContext(request));
             } catch (FileUploadException e) {
                 req.setAttribute("errorMessage", msg.getMessage("msg.max.file.size.exceed", null, request.getLocale()));
+                response.sendError(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE);
+                return;
             }
         }
 
