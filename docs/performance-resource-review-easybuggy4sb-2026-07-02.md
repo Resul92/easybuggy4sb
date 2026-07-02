@@ -220,9 +220,7 @@ High-confidence, low-risk fixes were applied in a draft pull request covering: r
 
 | PR | Branch | Description |
 |----|--------|-------------|
-| Draft PR (created by automation) | `cursor/backend-performance-review-c1e5` | Infrastructure performance hardening: config tuning, filter optimizations, HTTP timeouts, Derby logging, Docker startup |
-
-*PR URL will be added after `open_git_pr` completes.*
+| https://github.com/Resul92/easybuggy4sb/pull/1 (draft) | `cursor/backend-performance-review-c1e5` | Infrastructure performance hardening: config tuning, filter optimizations, HTTP timeouts, Derby logging, Docker startup |
 
 ## 9. Open Questions / Required Human Review
 
